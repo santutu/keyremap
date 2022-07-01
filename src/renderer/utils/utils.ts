@@ -10,6 +10,14 @@ import {Enum} from "../types/types";
 import {PathSolver} from "../systems/lib/PathSolver";
 import * as Path from "path";
 
+export function random(min :number, max :number) {
+    return Math.random() * (max - min) + min;
+}
+export async function randomSleep(min:number, max:number){
+    await sleep(random(min,max));
+}
+
+
 export function factory<T>(cls: interfaces.ServiceIdentifier<T>): T {
     return container.get(cls);
 }

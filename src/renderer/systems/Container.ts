@@ -2,7 +2,7 @@ import {Container} from "inversify";
 import {interfaces} from "inversify/lib/interfaces/interfaces";
 
 
-export const container = new Container({defaultScope: "Transient", autoBindInjectable: true});
+export const container = new Container({defaultScope: "Singleton", autoBindInjectable: true});
 
 
 export function overwrite<T>(bind: interfaces.ServiceIdentifier<T>, to: new (...args: any[]) => T) {

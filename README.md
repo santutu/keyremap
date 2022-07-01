@@ -1,3 +1,6 @@
+
+
+
 # Electron + Vue + typescript
 
 Base is electron  webpack project.
@@ -5,11 +8,11 @@ Base is electron  webpack project.
 recommended node version is 16.13.0
 
 ```
-yarn 
+yann
 npm rebuild --runtime=electron --target=8.2.0 --disturl=https://atom.io/download/atom-shell --abi=76
-yarn test
-yarn dev
-yarn dist
+npm run test
+npm run dev
+npm run dist
 ```
 
 - vuetify

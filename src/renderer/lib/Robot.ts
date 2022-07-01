@@ -1,63 +1,266 @@
 import {injectable} from "inversify";
+import {Status} from "./Status";
+import ShuffleSpells from "./ShuffleSpells";
 //https://github.com/octalmage/robotjs
 //https://robotjs.io/docs/syntax#mouseclickbutton-double
-const robot = require("robotjs");
 //https://wilix-team.github.io/iohook/usage.html#available-events
-const ioHook = require('iohook');
-
-interface KeyEvent {
-    keycode: number
-    rawcode: number
-    type: 'keydown' | 'keyup'
-    altKey: boolean
-    shiftKey: boolean
-    ctrlKey: boolean
-    metaKey: boolean
-}
-
-enum Status {
-    RUNNING = "RUNNING",
-    STOP = "STOP",
-
-}
+import {ioHook, robot} from "./constants";
+import AutoClick from "./AutoClick";
+import {MouseEvent} from "./MouseEvent";
+import {KeyEvent} from "./KeyEvent";
+import {QuickSpellKey} from "./QuickSpellKey";
+import GameImageModuleManager from "./GameImageModuleManager";
+import {randomSleep} from "../utils/utils";
 
 @injectable()
 export default class Robot {
 
     public status: Status = Status.STOP
 
-    constructor() {
-
+    constructor(
+        private shuffleSpells: ShuffleSpells,
+        private autoClick: AutoClick,
+        private moduleManager: GameImageModuleManager,
+    ) {
+        this.autoClick.setDefaultKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44});
     }
 
+    get autoClickStatus() {
+        return this.autoClick.status;
+    }
 
-    initialize() {
+    get shuffleStatus() {
+        return this.shuffleSpells.status
+    }
+
+    private defaultKey: QuickSpellKey = {keyCode: 2, key: '1', button: 'right', returnKey: '1', returnKeyCode: 2}
+    private defaultKeyZ: QuickSpellKey = {keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44}
+
+    private pressedSubKey: boolean = false;
+    private beforeSmartSpellKey: QuickSpellKey | null = null;
+
+    async initialize() {
+
+
+        const subKeyCode = 41;
+
         this.status = Status.STOP
 
-        ioHook.on('keydown', (evt: KeyEvent) => {
-            console.log('keycode: ', evt.keycode);
-        });
+        //quickSpell
+        const quickSpellKeyList: QuickSpellKey[] = [
+            {keyCode: 2, key: '1', button: 'right', returnKey: null, returnKeyCode: null},
+            {keyCode: 3, key: '2', button: 'right', returnKey: null, returnKeyCode: null},
+            {
+                keyCode: 4,
+                key: '3',
+                button: 'right',
+                returnKey: null,
+                returnKeyCode: null,
+                // returnKey: this.defaultKey.key,
+                // returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 5,
+                key: '4',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
 
-        //left click
-        ioHook.registerShortcut(
-            [57],
-            (keys) => {
-                if (this.status === Status.RUNNING) {
-                    console.log("left")
-                    robot.mouseClick('left');
+            {
+                keyCode: 6,
+                key: '5',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 7,
+                key: '6',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 65,
+                key: 'f7',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 66,
+                key: 'f8',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
 
+            {
+                keyCode: 30,
+                key: 'a',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 31,
+                key: 's',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 32,
+                key: 'd',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 33,
+                key: 'f',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+
+            {
+                keyCode: 44, key: 'z', button: 'right', returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 45,
+                key: 'x',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 46,
+                key: 'c',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 47,
+                key: 'v',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+        ];
+
+        ioHook.on('keydown', async (evt: KeyEvent) => {
+            // console.log(evt);
+
+            if (!this.isRunning()) {
+                return;
+            }
+
+            if (this.beforeSmartSpellKey?.returnKeyCode == evt.keycode || this.autoClick.beforeSmartSpellKey?.returnKeyCode == evt.keycode) {
+                this.beforeSmartSpellKey = null;
+                this.autoClick.beforeSmartSpellKey = null;
+                return;
+            }
+
+            for (const quickSpellKey of quickSpellKeyList) {
+
+                if (evt.keycode === quickSpellKey.keyCode) {
+                    if (this.shuffleSpells.isRunning()) {
+                        this.shuffleSpells.pause();
+                    }
+
+
+                    if (this.autoClick.isRunning()) {
+                        this.autoClick.pause();
+                    }
+
+                    this.beforeSmartSpellKey = quickSpellKey;
+
+                    // robot.keyTap(quickSpellKey.key);
+                    // await randomSleep(21, 51);
+                    robot.mouseClick(quickSpellKey.button);
+
+
+                    return;
 
                 }
-            }, (keys) => {
-
             }
-        );
+
+        });
+
+        ioHook.on('keyup', (evt: KeyEvent) => {
+            if (!this.isRunning()) {
+                return;
+            }
+
+            for (const quickSpellKey of quickSpellKeyList) {
+                if (evt.keycode === quickSpellKey.keyCode) {
+                    if (this.shuffleSpells.isPause()) {
+                        this.shuffleSpells.run();
+                    }
+
+                    if (this.autoClick.isPause()) {
+                        this.autoClick.run();
+                    }
+
+                    if (quickSpellKey.returnKey === null) {
+                        return
+                    }
+                    robot.keyTap(quickSpellKey.returnKey);
+
+                    return;
+                }
+            }
+        });
+
+
+        //alt -> toggle ']' key
+        ioHook.on('keyup', (evt: KeyEvent) => {
+            if (evt.keycode === 56) {
+                if (!this.isRunning()) {
+                    return;
+                }
+                robot.keyTap(']');
+            }
+        });
+
+
+        //subKey
+        ioHook.on('keydown', (evt: KeyEvent) => {
+            if (evt.keycode === subKeyCode) {
+                this.pressedSubKey = true;
+            }
+        });
+
+        ioHook.on('keyup', (evt: KeyEvent) => {
+            if (evt.keycode === subKeyCode) {
+                this.pressedSubKey = false;
+            }
+        });
+
+
+        //left click
+        ioHook.on('keydown', (evt: KeyEvent) => {
+            // left click
+            if (evt.keycode === 57) {
+                this.leftClick();
+            }
+        });
+        ioHook.on('mouseclick', (evt: MouseEvent) => {
+            if (evt.button === 4) {
+                this.leftClick();
+            }
+        })
+
 
         //right click
         ioHook.registerShortcut(
-            [29, 57],
+            [subKeyCode, 57],
             (keys) => {
-                if (this.status === Status.RUNNING) {
+                if (this.isRunning()) {
                     console.log("right")
                     robot.mouseClick('right');
 
@@ -68,13 +271,36 @@ export default class Robot {
             }
         );
 
-        //ctrl+`
+        //toggle auto click
         ioHook.registerShortcut(
             [29, 41],
             (keys) => {
+
+                if (this.autoClick.isRunning()) {
+                    this.autoClick.stop();
+
+
+                    this.shuffleSpells.stop();
+                    // this.moduleManager.stop();
+                } else {
+                    this.autoClick.run();
+                    this.shuffleSpells.run();
+                    // this.moduleManager.run();
+                }
+            }, (keys) => {
+
+            }
+        );
+
+        //toggle
+        ioHook.registerShortcut(
+            [15, 41],
+            (keys) => {
                 if (this.isRunning()) {
+                    this.moduleManager.stop();
                     this.stop()
                 } else {
+                    this.moduleManager.run();
                     this.start()
                 }
             }, (keys) => {
@@ -83,6 +309,8 @@ export default class Robot {
         );
 
         ioHook.start(false);
+
+
     }
 
     isStop() {
@@ -100,5 +328,27 @@ export default class Robot {
     start() {
         this.status = Status.RUNNING
     }
+
+    private leftClick() {
+        if (this.isRunning() && !this.pressedSubKey) {
+            // if (true) {
+            console.log("left")
+            robot.mouseClick('left');
+            if (this.autoClick.isRunning()) {
+                this.autoClick.stop();
+
+                this.beforeSmartSpellKey = this.defaultKey;
+                robot.keyTap(this.defaultKey.key)
+
+            }
+
+            // this.moduleManager.stop();
+
+            if (this.shuffleSpells.isRunning() || this.shuffleSpells.isPause()) {
+                this.shuffleSpells.stop();
+            }
+        }
+    }
+
 
 }
