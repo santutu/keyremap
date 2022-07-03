@@ -11,11 +11,16 @@ import {KeyEvent} from "./KeyEvent";
 import {QuickSpellKey} from "./QuickSpellKey";
 import GameImageModuleManager from "./GameImageModuleManager";
 import {randomSleep} from "../utils/utils";
+import Throttling from "./Throttling";
+
 
 @injectable()
 export default class Robot {
 
     public status: Status = Status.STOP
+
+    private leftClickThrottring = new Throttling(120);
+    private quickSpellThrottring = new Throttling(120);
 
     constructor(
         private shuffleSpells: ShuffleSpells,
@@ -82,10 +87,51 @@ export default class Robot {
                 returnKeyCode: this.defaultKey.keyCode
             },
             {
-                keyCode: 65,
-                key: 'f7',
+                keyCode: 59,
+                key: 'f1',
                 button: 'right',
                 returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 60,
+                key: 'f2',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+
+            {
+                keyCode: 61,
+                key: 'f3',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 62,
+                key: 'f4',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 63,
+                key: 'f5',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+            {
+                keyCode: 64,
+                key: 'f6',
+                button: 'right',
+                returnKey: this.defaultKey.key,
+                returnKeyCode: this.defaultKey.keyCode
+            },
+
+            {
+                keyCode: 65, key: 'f7', button: 'right', returnKey: this.defaultKey.key,
                 returnKeyCode: this.defaultKey.keyCode
             },
             {
@@ -95,57 +141,16 @@ export default class Robot {
                 returnKey: this.defaultKey.key,
                 returnKeyCode: this.defaultKey.keyCode
             },
-
             {
-                keyCode: 30,
-                key: 'a',
+                keyCode: 44,
+                key: 'z',
                 button: 'right',
                 returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 31,
-                key: 's',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 32,
-                key: 'd',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 33,
-                key: 'f',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-
-            {
-                keyCode: 44, key: 'z', button: 'right', returnKey: this.defaultKey.key,
                 returnKeyCode: this.defaultKey.keyCode
             },
             {
                 keyCode: 45,
                 key: 'x',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 46,
-                key: 'c',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 47,
-                key: 'v',
                 button: 'right',
                 returnKey: this.defaultKey.key,
                 returnKeyCode: this.defaultKey.keyCode
@@ -177,12 +182,18 @@ export default class Robot {
                         this.autoClick.pause();
                     }
 
+                    if (!this.quickSpellThrottring.check()) {
+                        return
+                    }
+
+
                     this.beforeSmartSpellKey = quickSpellKey;
 
                     // robot.keyTap(quickSpellKey.key);
                     // await randomSleep(21, 51);
-                    robot.mouseClick(quickSpellKey.button);
 
+                    robot.mouseClick(quickSpellKey.button);
+                    console.log('quick spell', quickSpellKey.button)
 
                     return;
 
@@ -331,14 +342,15 @@ export default class Robot {
 
     private leftClick() {
         if (this.isRunning() && !this.pressedSubKey) {
-            // if (true) {
-            console.log("left")
-            robot.mouseClick('left');
+            if (this.leftClickThrottring.check()) {
+                console.log("left")
+                robot.mouseClick('left');
+            }
             if (this.autoClick.isRunning()) {
                 this.autoClick.stop();
 
                 this.beforeSmartSpellKey = this.defaultKey;
-                robot.keyTap(this.defaultKey.key)
+                // robot.keyTap(this.defaultKey.key)
 
             }
 

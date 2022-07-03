@@ -42,7 +42,7 @@ export default class GameImageModuleManager {
                 return;
             }
             executingCount += 1;
-            console.log('executingCount', executingCount);
+            // console.log('executingCount', executingCount);
 
 
             // this.gameImage = await new Image(sharp("./sample-images/pd2-2.jpeg")).init();

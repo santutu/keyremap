@@ -28,8 +28,8 @@ export default class PotionHelper extends BaseModule {
         const hpPercent = this.getHpPercent();
         const manaPercent = this.getManaPercent();
 
-        console.log('hpPercent', hpPercent)
-        console.log('manaPercent', manaPercent)
+        // console.log('hpPercent', hpPercent)
+        // console.log('manaPercent', manaPercent)
 
 
         if (hpPercent < this.eatWhenBelowHpPercent) {

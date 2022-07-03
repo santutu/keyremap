@@ -20,6 +20,12 @@ export class BeltSlot {
 @injectable()
 export default class BeltManager extends BaseModule {
 
+    map = {
+        0: "j",
+        1: "k",
+        2: "l",
+        3: ";",
+    }
 
     constructor() {
         super();
@@ -30,7 +36,7 @@ export default class BeltManager extends BaseModule {
             throw new Error("idx is must be 0~3");
         }
 
-        robot.keyTap("f"+(idx + 9).toString());
+        robot.keyTap(this.map[idx].toString());
     }
 
     firstSlot: BeltSlot = new BeltSlot(0);
@@ -73,7 +79,7 @@ export default class BeltManager extends BaseModule {
 
         }
 
-        console.log(this.slots.map(slot=>slot.potion));
+        // console.log(this.slots.map(slot => slot.potion));
 
     }
 

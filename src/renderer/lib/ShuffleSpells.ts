@@ -40,6 +40,7 @@ export default class ShuffleSpells {
             if (this.isStop() || this.isPause()) {
                 break;
             }
+            //todo
             await randomSleep(this.min, this.max);
 
             this.idx++;

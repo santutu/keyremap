@@ -3,6 +3,8 @@ import {injectable} from "inversify";
 import {randomSleep, sleep} from "../utils/utils";
 import {robot} from "./constants";
 import {QuickSpellKey} from "./QuickSpellKey";
+import Throttling from "./Throttling";
+import SetInterval from "./SetInterval";
 
 @injectable()
 export default class AutoClick {
@@ -10,6 +12,7 @@ export default class AutoClick {
     public status: Status = Status.STOP
     public defaultKey!: QuickSpellKey;
     public beforeSmartSpellKey: QuickSpellKey | null = null;
+    public setInterval = new SetInterval();
 
     setDefaultKey(defaultKey: QuickSpellKey) {
         this.defaultKey = defaultKey
@@ -34,23 +37,24 @@ export default class AutoClick {
         this.status = Status.RUNNING;
         // robot.keyTap('f1')
 
-        while (true) {
+        this.setInterval.run(100,async ()=>{
             this.beforeSmartSpellKey = null;
 
             if (this.isStop() || this.isPause()) {
                 robot.mouseToggle('up', 'left');
                 this.beforeSmartSpellKey = this.defaultKey
                 // robot.keyTap(this.defaultKey.key)
-                break;
+                this.setInterval.stop();
+                return;
             }
+            // await randomSleep(101, 201);
+
             robot.mouseToggle('up', 'left');
             robot.mouseClick('left');
-            robot.mouseToggle('down', 'left');
-            await randomSleep(101, 201);
-            // await sleep(1);
-            console.log("left click")
+            robot.mouseToggle('down', 'left');// await sleep(1);
+            console.log("auto left click")
+        });
 
-        }
 
     }
 
