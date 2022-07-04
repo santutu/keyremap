@@ -9,8 +9,13 @@
         </div>
 
         <div>
-            autoClickStatus :{{ robot.autoClickStatus }}
+            autoLeftClickStatus :{{ robot.autoClickStatus }}
         </div>
+
+        <div>
+            autoRightClickStatus :{{ robot.autoRightClickStatus }}
+        </div>
+
 
         <div>
             shuffleStatus :{{ robot.shuffleStatus }}

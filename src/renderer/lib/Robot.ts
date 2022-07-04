@@ -8,10 +8,11 @@ import {ioHook, robot} from "./constants";
 import AutoClick from "./AutoClick";
 import {MouseEvent} from "./MouseEvent";
 import {KeyEvent} from "./KeyEvent";
-import {QuickSpellKey} from "./QuickSpellKey";
+import {KeyStatus, QuickSpellKey} from "./QuickSpellKey";
 import GameImageModuleManager from "./GameImageModuleManager";
 import {randomSleep} from "../utils/utils";
 import Throttling from "./Throttling";
+import {defaultKey, spellKeys} from "./SpellKeys";
 
 
 @injectable()
@@ -19,27 +20,33 @@ export default class Robot {
 
     public status: Status = Status.STOP
 
-    private leftClickThrottring = new Throttling(120);
-    private quickSpellThrottring = new Throttling(120);
+    private leftClickThrottling = new Throttling(120);
 
     constructor(
         private shuffleSpells: ShuffleSpells,
-        private autoClick: AutoClick,
+        private autoLeftClick: AutoClick,
+        private autoRightClick: AutoClick,
         private moduleManager: GameImageModuleManager,
     ) {
-        this.autoClick.setDefaultKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44});
+        this.autoRightClick.click = 'right'
+        this.autoLeftClick.setDefaultKey(new QuickSpellKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44}));
+        this.autoRightClick.setDefaultKey(new QuickSpellKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44}));
     }
 
     get autoClickStatus() {
-        return this.autoClick.status;
+        return this.autoLeftClick.status;
+    }
+
+    get autoRightClickStatus() {
+        return this.autoRightClick.status;
     }
 
     get shuffleStatus() {
         return this.shuffleSpells.status
     }
 
-    private defaultKey: QuickSpellKey = {keyCode: 2, key: '1', button: 'right', returnKey: '1', returnKeyCode: 2}
-    private defaultKeyZ: QuickSpellKey = {keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44}
+    private defaultKey: QuickSpellKey = defaultKey;
+    private defaultKeyZ: QuickSpellKey = new QuickSpellKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44})
 
     private pressedSubKey: boolean = false;
     private beforeSmartSpellKey: QuickSpellKey | null = null;
@@ -52,123 +59,25 @@ export default class Robot {
         this.status = Status.STOP
 
         //quickSpell
-        const quickSpellKeyList: QuickSpellKey[] = [
-            {keyCode: 2, key: '1', button: 'right', returnKey: null, returnKeyCode: null},
-            {keyCode: 3, key: '2', button: 'right', returnKey: null, returnKeyCode: null},
-            {
-                keyCode: 4,
-                key: '3',
-                button: 'right',
-                returnKey: null,
-                returnKeyCode: null,
-                // returnKey: this.defaultKey.key,
-                // returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 5,
-                key: '4',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-
-            {
-                keyCode: 6,
-                key: '5',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 7,
-                key: '6',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 59,
-                key: 'f1',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 60,
-                key: 'f2',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-
-            {
-                keyCode: 61,
-                key: 'f3',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 62,
-                key: 'f4',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 63,
-                key: 'f5',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 64,
-                key: 'f6',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-
-            {
-                keyCode: 65, key: 'f7', button: 'right', returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 66,
-                key: 'f8',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 44,
-                key: 'z',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-            {
-                keyCode: 45,
-                key: 'x',
-                button: 'right',
-                returnKey: this.defaultKey.key,
-                returnKeyCode: this.defaultKey.keyCode
-            },
-        ];
+        const quickSpellKeyList: QuickSpellKey[] = spellKeys
 
         ioHook.on('keydown', async (evt: KeyEvent) => {
-            // console.log(evt);
 
             if (!this.isRunning()) {
                 return;
             }
+            //
+            // if (this.beforeSmartSpellKey?.keyCode === evt.keycode
+            //     || this.autoLeftClick.beforeSmartSpellKey?.returnKeyCode === evt.keycode
+            //     || this.autoRightClick.beforeSmartSpellKey?.returnKeyCode === evt.keycode
+            // ) {
+            //     console.log('return beforeSmartSpellKey', this.beforeSmartSpellKey?.keyCode)
+            //     this.beforeSmartSpellKey = null;
+            //     this.autoLeftClick.beforeSmartSpellKey = null;
+            //     this.autoRightClick.beforeSmartSpellKey = null;
+            //     return;
+            // }
 
-            if (this.beforeSmartSpellKey?.returnKeyCode == evt.keycode || this.autoClick.beforeSmartSpellKey?.returnKeyCode == evt.keycode) {
-                this.beforeSmartSpellKey = null;
-                this.autoClick.beforeSmartSpellKey = null;
-                return;
-            }
 
             for (const quickSpellKey of quickSpellKeyList) {
 
@@ -178,22 +87,30 @@ export default class Robot {
                     }
 
 
-                    if (this.autoClick.isRunning()) {
-                        this.autoClick.pause();
+                    if (this.autoLeftClick.isRunning()) {
+                        this.autoLeftClick.pause();
                     }
 
-                    if (!this.quickSpellThrottring.check()) {
+                    if (this.autoRightClick.isRunning()) {
+                        this.autoRightClick.pause();
+                    }
+
+                    // this.beforeSmartSpellKey = quickSpellKey;
+
+                    // console.log('try quick spell', quickSpellKey.button)
+                    if (!quickSpellKey.throttling.check()) {
                         return
                     }
 
-
-                    this.beforeSmartSpellKey = quickSpellKey;
+                    // console.log('1quick spell', quickSpellKey.button)
 
                     // robot.keyTap(quickSpellKey.key);
                     // await randomSleep(21, 51);
 
-                    robot.mouseClick(quickSpellKey.button);
-                    console.log('quick spell', quickSpellKey.button)
+                    robot.mouseToggle('down', quickSpellKey.button);
+                    quickSpellKey.keyStatus = KeyStatus.Down;
+                    // robot.mouseClick(quickSpellKey.button);
+                    console.log('2quick spell', quickSpellKey.button)
 
                     return;
 
@@ -205,7 +122,7 @@ export default class Robot {
         ioHook.on('keyup', (evt: KeyEvent) => {
             if (!this.isRunning()) {
                 return;
-            }
+            }1
 
             for (const quickSpellKey of quickSpellKeyList) {
                 if (evt.keycode === quickSpellKey.keyCode) {
@@ -213,10 +130,17 @@ export default class Robot {
                         this.shuffleSpells.run();
                     }
 
-                    if (this.autoClick.isPause()) {
-                        this.autoClick.run();
+                    if (this.autoLeftClick.isPause()) {
+                        this.autoLeftClick.run();
                     }
 
+                    if (this.autoRightClick.isPause()) {
+                        this.autoRightClick.run();
+                    }
+
+                    robot.mouseToggle('up', quickSpellKey.button);
+                    quickSpellKey.keyStatus = KeyStatus.Up;
+                    return;
                     if (quickSpellKey.returnKey === null) {
                         return
                     }
@@ -282,26 +206,43 @@ export default class Robot {
             }
         );
 
-        //toggle auto click
+        //toggle auto right click
         ioHook.registerShortcut(
             [29, 41],
             (keys) => {
 
-                if (this.autoClick.isRunning()) {
-                    this.autoClick.stop();
-
+                if (this.autoLeftClick.isRunning()) {
+                    this.autoLeftClick.stop();
 
                     this.shuffleSpells.stop();
-                    // this.moduleManager.stop();
                 } else {
-                    this.autoClick.run();
+                    this.autoLeftClick.run();
                     this.shuffleSpells.run();
-                    // this.moduleManager.run();
+                    this.autoRightClick.stop();
                 }
             }, (keys) => {
 
             }
         );
+
+
+        //toggle right click
+        ioHook.registerShortcut(
+            [56, 41],
+            (keys) => {
+
+                if (this.autoRightClick.isRunning()) {
+                    this.autoRightClick.stop();
+
+                } else {
+                    this.autoRightClick.run();
+                    this.autoLeftClick.stop();
+                }
+            }, (keys) => {
+
+            }
+        );
+
 
         //toggle
         ioHook.registerShortcut(
@@ -342,15 +283,21 @@ export default class Robot {
 
     private leftClick() {
         if (this.isRunning() && !this.pressedSubKey) {
-            if (this.leftClickThrottring.check()) {
+            if (this.leftClickThrottling.check()) {
                 console.log("left")
                 robot.mouseClick('left');
             }
-            if (this.autoClick.isRunning()) {
-                this.autoClick.stop();
+            if (this.autoLeftClick.isRunning()) {
+                this.autoLeftClick.stop();
 
                 this.beforeSmartSpellKey = this.defaultKey;
                 // robot.keyTap(this.defaultKey.key)
+
+            }
+
+            if (this.autoRightClick.isRunning()) {
+                this.autoRightClick.stop();
+
 
             }
 

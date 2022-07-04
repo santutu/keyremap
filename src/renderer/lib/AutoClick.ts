@@ -14,6 +14,8 @@ export default class AutoClick {
     public beforeSmartSpellKey: QuickSpellKey | null = null;
     public setInterval = new SetInterval();
 
+    public click: string = "left"
+
     setDefaultKey(defaultKey: QuickSpellKey) {
         this.defaultKey = defaultKey
     }
@@ -37,30 +39,33 @@ export default class AutoClick {
         this.status = Status.RUNNING;
         // robot.keyTap('f1')
 
-        this.setInterval.run(100,async ()=>{
+        this.setInterval.run(100, async () => {
             this.beforeSmartSpellKey = null;
 
             if (this.isStop() || this.isPause()) {
-                robot.mouseToggle('up', 'left');
                 this.beforeSmartSpellKey = this.defaultKey
                 // robot.keyTap(this.defaultKey.key)
                 this.setInterval.stop();
                 return;
             }
             // await randomSleep(101, 201);
+            this.mouseUp()
 
-            robot.mouseToggle('up', 'left');
-            robot.mouseClick('left');
-            robot.mouseToggle('down', 'left');// await sleep(1);
-            console.log("auto left click")
+            robot.mouseClick(this.click);
+            robot.mouseToggle('down', this.click);// await sleep(1);
+            console.log(`auto  ${this.click} click`)
         });
 
 
     }
 
-    public stop() {
+    mouseUp() {
+        robot.mouseToggle('up', this.click);
+    }
 
+    public stop() {
         this.status = Status.STOP
+        this.mouseUp()
     }
 
     public isStop() {
@@ -73,6 +78,7 @@ export default class AutoClick {
 
     public pause() {
         this.status = Status.PAUSE;
+        this.mouseUp()
     }
 
     public isPause() {
