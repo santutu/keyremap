@@ -17,7 +17,7 @@ export default class Throttling {
         const now = Date.now();
         // console.log('Throttling', now - this.before)
         if (now - this.before >= this.interval) {
-        console.log('Throttling ON', now - this.before)
+        // console.log('Throttling ON', now - this.before)
             this.before = Date.now();
             return true;
         }

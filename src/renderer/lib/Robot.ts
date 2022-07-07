@@ -22,6 +22,7 @@ export default class Robot {
 
     private leftClickThrottling = new Throttling(120);
 
+
     constructor(
         private shuffleSpells: ShuffleSpells,
         private autoLeftClick: AutoClick,
@@ -29,8 +30,20 @@ export default class Robot {
         private moduleManager: GameImageModuleManager,
     ) {
         this.autoRightClick.click = 'right'
-        this.autoLeftClick.setDefaultKey(new QuickSpellKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44}));
-        this.autoRightClick.setDefaultKey(new QuickSpellKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44}));
+        this.autoLeftClick.setDefaultKey(new QuickSpellKey({
+                                                               keyCode: 44,
+                                                               key: 'z',
+                                                               button: 'right',
+                                                               returnKey: 'z',
+                                                               returnKeyCode: 44
+                                                           }));
+        this.autoRightClick.setDefaultKey(new QuickSpellKey({
+                                                                keyCode: 44,
+                                                                key: 'z',
+                                                                button: 'right',
+                                                                returnKey: 'z',
+                                                                returnKeyCode: 44
+                                                            }));
     }
 
     get autoClickStatus() {
@@ -46,7 +59,13 @@ export default class Robot {
     }
 
     private defaultKey: QuickSpellKey = defaultKey;
-    private defaultKeyZ: QuickSpellKey = new QuickSpellKey({keyCode: 44, key: 'z', button: 'right', returnKey: 'z', returnKeyCode: 44})
+    private defaultKeyZ: QuickSpellKey = new QuickSpellKey({
+                                                               keyCode: 44,
+                                                               key: 'z',
+                                                               button: 'right',
+                                                               returnKey: 'z',
+                                                               returnKeyCode: 44
+                                                           })
 
     private pressedSubKey: boolean = false;
     private beforeSmartSpellKey: QuickSpellKey | null = null;
@@ -62,7 +81,7 @@ export default class Robot {
         const quickSpellKeyList: QuickSpellKey[] = spellKeys
 
         ioHook.on('keydown', async (evt: KeyEvent) => {
-
+            // console.log(evt);
             if (!this.isRunning()) {
                 return;
             }
@@ -82,10 +101,27 @@ export default class Robot {
             for (const quickSpellKey of quickSpellKeyList) {
 
                 if (evt.keycode === quickSpellKey.keyCode) {
-                    if (this.shuffleSpells.isRunning()) {
-                        this.shuffleSpells.pause();
+
+                    if (!evt.ctrlKey) {
+                        this.autoRightClick.stop();
+                        // this.shuffleSpells.stop();
                     }
 
+                    if (this.shuffleSpells.use ) {
+                        if (evt.ctrlKey && this.shuffleSpells.isStop() && this.shuffleSpells.isShuffleKey(quickSpellKey.key)) {
+                            this.shuffleSpells.run();
+
+                            // console.log(1)
+
+
+                        } else if (evt.ctrlKey && !this.shuffleSpells.isShuffleKey(quickSpellKey.key) && this.shuffleSpells.isRunning()) {
+                            // console.log(2)
+                            this.shuffleSpells.stop();
+                        } else if (!this.shuffleSpells.isShuffleKey(quickSpellKey.key) && this.shuffleSpells.isRunning()) {
+                            // console.log(3)
+                            this.shuffleSpells.pause();
+                        }
+                    }
 
                     if (this.autoLeftClick.isRunning()) {
                         this.autoLeftClick.pause();
@@ -110,7 +146,7 @@ export default class Robot {
                     robot.mouseToggle('down', quickSpellKey.button);
                     quickSpellKey.keyStatus = KeyStatus.Down;
                     // robot.mouseClick(quickSpellKey.button);
-                    console.log('2quick spell', quickSpellKey.button)
+                    // console.log('2quick spell', quickSpellKey.button)
 
                     return;
 
@@ -122,13 +158,12 @@ export default class Robot {
         ioHook.on('keyup', (evt: KeyEvent) => {
             if (!this.isRunning()) {
                 return;
-            }1
+            }
+
 
             for (const quickSpellKey of quickSpellKeyList) {
                 if (evt.keycode === quickSpellKey.keyCode) {
-                    if (this.shuffleSpells.isPause()) {
-                        this.shuffleSpells.run();
-                    }
+
 
                     if (this.autoLeftClick.isPause()) {
                         this.autoLeftClick.run();
@@ -139,8 +174,18 @@ export default class Robot {
                     }
 
                     robot.mouseToggle('up', quickSpellKey.button);
+
+                    if (this.shuffleSpells.use && !this.shuffleSpells.isShuffleKey(quickSpellKey.key) && this.shuffleSpells.isPause()) {
+                        // console.log(4);
+                        this.shuffleSpells.run();
+                    }
+
                     quickSpellKey.keyStatus = KeyStatus.Up;
+
                     return;
+                    ;
+
+
                     if (quickSpellKey.returnKey === null) {
                         return
                     }
@@ -196,7 +241,7 @@ export default class Robot {
             [subKeyCode, 57],
             (keys) => {
                 if (this.isRunning()) {
-                    console.log("right")
+                    // console.log("right")
                     robot.mouseClick('right');
 
 
@@ -206,42 +251,59 @@ export default class Robot {
             }
         );
 
-        //toggle auto right click
+
+        //toggle auto left click
         ioHook.registerShortcut(
             [29, 41],
             (keys) => {
-
+                if (!this.isRunning()) {
+                    return
+                }
                 if (this.autoLeftClick.isRunning()) {
                     this.autoLeftClick.stop();
 
-                    this.shuffleSpells.stop();
+
                 } else {
                     this.autoLeftClick.run();
-                    this.shuffleSpells.run();
                     this.autoRightClick.stop();
                 }
+
             }, (keys) => {
 
             }
         );
 
+        //toggle auto right click
+        for (const spellKey of spellKeys) {
+            ioHook.registerShortcut(
+                [29, spellKey.keyCode],
+                (keys) => {
+                    if (!this.isRunning()) {
+                        return
+                    }
 
-        //toggle right click
-        ioHook.registerShortcut(
-            [56, 41],
-            (keys) => {
+                    if (this.shuffleSpells.use && this.shuffleSpells.isShuffleKey(spellKey.key)) {
+                        return;
+                    }
 
-                if (this.autoRightClick.isRunning()) {
-                    this.autoRightClick.stop();
+                    if (this.autoRightClick.isRunning()) {
+                        this.autoRightClick.stop();
 
-                } else {
-                    this.autoRightClick.run();
-                    this.autoLeftClick.stop();
+                        this.shuffleSpells.stop();
+
+                    } else {
+                        this.autoRightClick.run();
+                        this.autoLeftClick.stop();
+
+
+                    }
+
+
+                }, (keys) => {
+
                 }
-            }, (keys) => {
-
-            }
-        );
+            );
+        }
 
 
         //toggle
@@ -250,7 +312,9 @@ export default class Robot {
             (keys) => {
                 if (this.isRunning()) {
                     this.moduleManager.stop();
+                    this.autoLeftClick.stop()
                     this.stop()
+                    this.autoRightClick.stop()
                 } else {
                     this.moduleManager.run();
                     this.start()
@@ -284,7 +348,7 @@ export default class Robot {
     private leftClick() {
         if (this.isRunning() && !this.pressedSubKey) {
             if (this.leftClickThrottling.check()) {
-                console.log("left")
+                // console.log("left")
                 robot.mouseClick('left');
             }
             if (this.autoLeftClick.isRunning()) {

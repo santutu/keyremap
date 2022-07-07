@@ -1,7 +1,7 @@
 import {Properties, PropertiesOmit, PropertiesOptional} from "../types/types";
 import Throttling from "./Throttling";
 
-export enum KeyStatus {
+export enum KeyStatus{
     Down,
     Up,
 
@@ -16,9 +16,8 @@ export class QuickSpellKey {
 
     throttling = new Throttling(120);
 
-    keyStatus: KeyStatus = KeyStatus.Up
-
-    constructor(props: Properties<QuickSpellKey> | any) {
-        Object.assign(this, props);
+    keyStatus : KeyStatus= KeyStatus.Up
+    constructor(props: Properties<QuickSpellKey> |any) {
+        Object.assign(this,props);
     }
 }
